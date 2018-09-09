@@ -1,0 +1,10 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ socio.nome }}{% endblock %}
+
+{% block body %}
+ <h1>{{ socio.nome }}</h1>
+ <p>{{ socio.telefone }}</p>
+ <hr>
+ <a href="/">Voltar</a>
+{% endblock %}
