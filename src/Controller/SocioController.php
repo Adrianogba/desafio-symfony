@@ -1,6 +1,7 @@
 <?php
 namespace App\Controller;
 
+use App\Entity\Empresa;
 use App\Entity\Socio;
 use Doctrine\DBAL\Types\TextType;
 use Symfony\Component\HttpFoundation\Response;
@@ -31,70 +32,54 @@ class SocioController extends Controller {
      * @return \Symfony\Component\HttpFoundation\RedirectResponse|Response
      */
     public function new(Request $request) {
+        $request = json_decode($request->getContent(),1);
+
         $socio = new Socio();
+        $socio->setNome($request["nome"]);
+        $socio->setTelefone($request["telefone"]);
 
-        $form = $this->createFormBuilder($socio)
-            ->add('title', TextType::class, array('attr' => array('class' => 'form-control')))
-            ->add('body', TextareaType::class, array(
-                'required' => false,
-                'attr' => array('class' => 'form-control')
-            ))
-            ->add('save', SubmitType::class, array(
-                'label' => 'Create',
-                'attr' => array('class' => 'btn btn-primary mt-3')
-            ))
-            ->getForm();
 
-        $form->handleRequest($request);
+        $empresa = $this->getDoctrine()->getRepository(Empresa::class)->find($request["empresa"]);
 
-        if($form->isSubmitted() && $form->isValid()) {
-            $socio = $form->getData();
+        $socio->setEmpresa($empresa);
 
-            $entityManager = $this->getDoctrine()->getManager();
-            $entityManager->persist($socio);
-            $entityManager->flush();
+        $manager = $this->getDoctrine()->getManager();
 
-            return $this->redirectToRoute('socio_list');
-        }
+        #try
+        $manager->persist($socio);
+        $manager->flush();
 
-        return $this->render('socios/new.html.twig', array(
-            'form' => $form->createView()
-        ));
+        $response = $this->get("jms_serializer")->serialize($socio,"json");
+        return new Response($response);
     }
 
     /**
      * @Route("/socio/edit/{id}", name="edit_socio")
      * Method({"GET", "POST"})
+     * @param Request $request
+     * @param $id
+     * @return Response
      */
     public function edit(Request $request, $id) {
         $socio = new Socio();
         $socio = $this->getDoctrine()->getRepository(Socio::class)->find($id);
 
-        $form = $this->createFormBuilder($socio)
-            ->add('title', TextType::class, array('attr' => array('class' => 'form-control')))
-            ->add('body', TextareaType::class, array(
-                'required' => false,
-                'attr' => array('class' => 'form-control')
-            ))
-            ->add('save', SubmitType::class, array(
-                'label' => 'Update',
-                'attr' => array('class' => 'btn btn-primary mt-3')
-            ))
-            ->getForm();
+        $socio->setNome($request["nome"]);
+        $socio->setTelefone($request["telefone"]);
 
-        $form->handleRequest($request);
+        $empresa = $this->getDoctrine()->getRepository(Empresa::class)->find($request["empresa"]);
 
-        if($form->isSubmitted() && $form->isValid()) {
+        $socio->setEmpresa($empresa);
 
-            $entityManager = $this->getDoctrine()->getManager();
-            $entityManager->flush();
+        $manager = $this->getDoctrine()->getManager();
 
-            return $this->redirectToRoute('socio_list');
-        }
+        #try
+        $manager->persist($socio);
+        $manager->flush();
 
-        return $this->render('socios/edit.html.twig', array(
-            'form' => $form->createView()
-        ));
+        $response = $this->get("jms_serializer")->serialize($socio,"json");
+
+        return new Response($response);
     }
 
     /**
@@ -102,6 +87,8 @@ class SocioController extends Controller {
      */
     public function show($id) {
         $socio = $this->getDoctrine()->getRepository(Socio::class)->find($id);
+
+
 
         return $this->render('socios/show.html.twig', array('socio' => $socio));
     }
@@ -119,5 +106,9 @@ class SocioController extends Controller {
 
         $response = new Response();
         $response->send();
+
+        $response = $this->get("jms_serializer")->serialize($socio,"json");
+
+        return new Response($response);
     }
 }

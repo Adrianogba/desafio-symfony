@@ -74,10 +74,12 @@ class EmpresaController extends Controller {
      * @Route("/empresa/{id}", name="empresa_show")
      */
     public function show($id) {
+
         $empresa = $this->getDoctrine()->getRepository(Empresa::class)->find($id);
 
         $response = $this->get("jms_serializer")->serialize($empresa,"json");
-        return $response;
+
+        return new Response($response);
     }
 
     /**
@@ -93,5 +95,9 @@ class EmpresaController extends Controller {
 
         $response = new Response();
         $response->send();
+
+        $response = $this->get("jms_serializer")->serialize($empresa,"json");
+
+        return new Response($response);
     }
 }
