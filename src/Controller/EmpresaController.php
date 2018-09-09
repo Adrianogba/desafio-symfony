@@ -2,15 +2,12 @@
 namespace App\Controller;
 
 use App\Entity\Empresa;
-use Doctrine\DBAL\Types\TextType;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 
-use Symfony\Component\Form\Extension\Core\Type\TextareaType;
-use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 
 class EmpresaController extends Controller {
     /**
@@ -21,45 +18,31 @@ class EmpresaController extends Controller {
 
         $empresas= $this->getDoctrine()->getRepository(Empresa::class)->findAll();
 
-        return $this->render('empresas/index.html.twig', array('empresas' => $empresas));
+        $response = $this->get("jms_serializer")->serialize($empresas,"json");
+        return new Response($response);
     }
 
     /**
      * @Route("/empresa/new", name="new_empresa")
-     * Method({"GET", "POST"})
+     * Method({"POST"})
      * @param Request $request
      * @return \Symfony\Component\HttpFoundation\RedirectResponse|Response
      */
     public function new(Request $request) {
+        $request = json_decode($request->getContent(),1);
+
         $empresa = new Empresa();
+        $empresa->setNome($request["nome"]);
+        $empresa->setTelefone($request["telefone"]);
 
-        $form = $this->createFormBuilder($empresa)
-            ->add('title', TextType::class, array('attr' => array('class' => 'form-control')))
-            ->add('body', TextareaType::class, array(
-                'required' => false,
-                'attr' => array('class' => 'form-control')
-            ))
-            ->add('save', SubmitType::class, array(
-                'label' => 'Create',
-                'attr' => array('class' => 'btn btn-primary mt-3')
-            ))
-            ->getForm();
+        $manager = $this->getDoctrine()->getManager();
 
-        $form->handleRequest($request);
+        #try
+        $manager->persist($empresa);
+        $manager->flush();
 
-        if($form->isSubmitted() && $form->isValid()) {
-            $empresa = $form->getData();
-
-            $entityManager = $this->getDoctrine()->getManager();
-            $entityManager->persist($empresa);
-            $entityManager->flush();
-
-            return $this->redirectToRoute('empresa_list');
-        }
-
-        return $this->render('empresas/new.html.twig', array(
-            'form' => $form->createView()
-        ));
+        $response = $this->get("jms_serializer")->serialize($empresa,"json");
+        return new Response($response);
     }
 
     /**
@@ -73,31 +56,18 @@ class EmpresaController extends Controller {
         $empresa = new Empresa();
         $empresa = $this->getDoctrine()->getRepository(Empresa::class)->find($id);
 
-        $form = $this->createFormBuilder($empresa)
-            ->add('title', TextType::class, array('attr' => array('class' => 'form-control')))
-            ->add('body', TextareaType::class, array(
-                'required' => false,
-                'attr' => array('class' => 'form-control')
-            ))
-            ->add('save', SubmitType::class, array(
-                'label' => 'Update',
-                'attr' => array('class' => 'btn btn-primary mt-3')
-            ))
-            ->getForm();
+        $empresa->setNome($request["nome"]);
+        $empresa->setTelefone($request["telefone"]);
 
-        $form->handleRequest($request);
+        $manager = $this->getDoctrine()->getManager();
 
-        if($form->isSubmitted() && $form->isValid()) {
+        #try
+        $manager->persist($empresa);
+        $manager->flush();
 
-            $entityManager = $this->getDoctrine()->getManager();
-            $entityManager->flush();
+        $response = $this->get("jms_serializer")->serialize($empresa,"json");
 
-            return $this->redirectToRoute('empresa_list');
-        }
-
-        return $this->render('empresas/edit.html.twig', array(
-            'form' => $form->createView()
-        ));
+        return new Response($response);
     }
 
     /**
@@ -106,7 +76,8 @@ class EmpresaController extends Controller {
     public function show($id) {
         $empresa = $this->getDoctrine()->getRepository(Empresa::class)->find($id);
 
-        return $this->render('empresas/show.html.twig', array('empresa' => $empresa));
+        $response = $this->get("jms_serializer")->serialize($empresa,"json");
+        return $response;
     }
 
     /**

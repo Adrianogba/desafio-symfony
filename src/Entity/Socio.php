@@ -5,19 +5,24 @@ namespace App\Entity;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * @ORM\Entity(repositoryClass="App\Repository\SocioRepository")
+ * @ORM\Entity
+ * @ORM\Table(name="socio")
  */
-class Socio
-{
+class Socio{
     /**
-     * @ORM\Id()
-     * @ORM\GeneratedValue()
+     * @ORM\Id
+     * @ORM\GeneratedValue(strategy="AUTO")
      * @ORM\Column(type="integer")
      */
     private $id;
 
     /**
-     * @ORM\Column(type="text")
+     * @ORM\ManyToOne(targetEntity="App\Entity\Empresa", inversedBy="empresa")
+     */
+    private $empresa;
+
+    /**
+     * @ORM\Column(type="string", length=100)
      */
     private $nome;
 
@@ -49,5 +54,13 @@ class Socio
     public function setTelefone($telefone): void
     {
         $this->telefone = $telefone;
+    }
+
+    public function getEmpresa(){
+        return $this->empresa;
+    }
+
+    public function setEmpresa($empresa): void{
+        $this->$empresa=$empresa;
     }
 }
