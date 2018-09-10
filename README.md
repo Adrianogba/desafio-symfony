@@ -48,7 +48,7 @@ Estas são as rodas para uso deste webservice:
 #### Empresas:
 | Função | Rota | Parametro | Tipo |
 | ------ | ------ | ------ | ------ |
-| Sócio - Listar Todas | / | Nenhum | GET
+| Sócio - Listar Todas | /socios | Nenhum | GET
 | Sócio - Cadastrar | /socio/new | JSON de Sócio (Nome, Telefone e ID de Empresa) | POST/GET
 | Sócio - Editar | /socio/edit/{id} | ID do Sócio | POST/GET
 | Sócio - Remover | /socio/new | JSON do Sócio | POST/GET
