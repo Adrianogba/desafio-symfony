@@ -8,7 +8,7 @@ Neste código foi feita um webservice REST com operações para as entidades Emp
 * [Symfony](https://symfony.com/4) - v4.1.0 - Framework PHP MVC
 * [Composer](https://getcomposer.org/) - v1.7.2 - Gerenciador de Pacotes
 * [Doctrine](https://www.doctrine-project.org/) - v1.8.0 - ORM
-* [PHP](https://secure.php.net/) - v4.1.0 - Linguagem
+* [PHP](https://secure.php.net/) - v7.1.0 - Linguagem
 * [PostgreSQL](https://www.postgresql.org/) - v9.6.10 - SGBD
 
 ### Instalação
