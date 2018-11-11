@@ -1,7 +1,7 @@
 # Desafio Symfony - CRUD de Empresas e Sócios
 <img src="http://blog.4linux.com.br/wp-content/uploads/2018/04/symfony-4.jpg" width="55%">
 
-Neste código foi feita um webservice REST com operações para as entidades Empresa e Sócio, onde uma empresa pode ter vários sócios.
+Neste código foi feito um webservice REST com operações para as entidades Empresa e Sócio, onde uma empresa pode ter vários sócios.
 
 ### Especificações principais
 
