@@ -1,3 +1,2 @@
-controllers:
-    resource: ../../src/Controller/
-    type: annotation
+# Annotations are deprecated and replaced by PHP 8 attributes.
+# Rotas carregadas via PHP 8 attributes.

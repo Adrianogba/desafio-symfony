@@ -1,114 +1,111 @@
 <?php
+
 namespace App\Controller;
 
 use App\Entity\Empresa;
 use App\Entity\Socio;
-use Doctrine\DBAL\Types\TextType;
-use Symfony\Component\HttpFoundation\Response;
+use App\Repository\EmpresaRepository;
+use App\Repository\SocioRepository;
+use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\Routing\Annotation\Route;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
-use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Attribute\Route;
 
-use Symfony\Component\Form\Extension\Core\Type\TextareaType;
-use Symfony\Component\Form\Extension\Core\Type\SubmitType;
+class SocioController extends AbstractController
+{
+    #[Route('/socios', name: 'socio_list', methods: ['GET'])]
+    public function index(SocioRepository $socioRepository): JsonResponse
+    {
+        $socios = $socioRepository->findAll();
 
-class SocioController extends Controller {
-    /**
-     * @Route("/socios", name="socio_list")
-     * @Method({"GET"})
-     */
-    public function index() {
-
-        $socios= $this->getDoctrine()->getRepository(Socio::class)->findAll();
-
-        return $this->render('socios/index.html.twig', array('socios' => $socios));
+        return $this->json($socios, Response::HTTP_OK);
     }
 
-    /**
-     * @Route("/socio/new", name="new_socio")
-     * Method({"GET", "POST"})
-     * @param Request $request
-     * @return \Symfony\Component\HttpFoundation\RedirectResponse|Response
-     */
-    public function new(Request $request) {
-        $request = json_decode($request->getContent(),1);
+    #[Route('/socio/new', name: 'new_socio', methods: ['GET', 'POST'])]
+    public function new(Request $request, EmpresaRepository $empresaRepository, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true);
+
+        if (!$data || !isset($data['nome']) || !isset($data['empresa'])) {
+            return $this->json(['error' => 'Dados inválidos. Os campos "nome" e "empresa" (ID) são obrigatórios.'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $empresa = $empresaRepository->find($data['empresa']);
+
+        if (!$empresa) {
+            return $this->json(['error' => 'Empresa vinculada não encontrada.'], Response::HTTP_NOT_FOUND);
+        }
 
         $socio = new Socio();
-        $socio->setNome($request["nome"]);
-        $socio->setTelefone($request["telefone"]);
-
-
-        $empresa = $this->getDoctrine()->getRepository(Empresa::class)->find($request["empresa"]);
-
+        $socio->setNome($data['nome']);
+        $socio->setTelefone($data['telefone'] ?? null);
         $socio->setEmpresa($empresa);
 
-        $manager = $this->getDoctrine()->getManager();
+        $entityManager->persist($socio);
+        $entityManager->flush();
 
-        #try
-        $manager->persist($socio);
-        $manager->flush();
-
-        $response = $this->get("jms_serializer")->serialize($socio,"json");
-        return new Response($response);
+        return $this->json($socio, Response::HTTP_CREATED);
     }
 
-    /**
-     * @Route("/socio/edit/{id}", name="edit_socio")
-     * Method({"GET", "POST"})
-     * @param Request $request
-     * @param $id
-     * @return Response
-     */
-    public function edit(Request $request, $id) {
-        $socio = new Socio();
-        $socio = $this->getDoctrine()->getRepository(Socio::class)->find($id);
+    #[Route('/socio/edit/{id}', name: 'edit_socio', methods: ['GET', 'POST', 'PUT'])]
+    public function edit(int $id, Request $request, SocioRepository $socioRepository, EmpresaRepository $empresaRepository, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $socio = $socioRepository->find($id);
 
-        $socio->setNome($request["nome"]);
-        $socio->setTelefone($request["telefone"]);
+        if (!$socio) {
+            return $this->json(['error' => 'Sócio não encontrado.'], Response::HTTP_NOT_FOUND);
+        }
 
-        $empresa = $this->getDoctrine()->getRepository(Empresa::class)->find($request["empresa"]);
+        $data = json_decode($request->getContent(), true);
 
-        $socio->setEmpresa($empresa);
+        if ($data) {
+            if (isset($data['nome'])) {
+                $socio->setNome($data['nome']);
+            }
+            if (isset($data['telefone'])) {
+                $socio->setTelefone($data['telefone']);
+            }
+            if (isset($data['empresa'])) {
+                $empresa = $empresaRepository->find($data['empresa']);
+                if ($empresa) {
+                    $socio->setEmpresa($empresa);
+                }
+            }
 
-        $manager = $this->getDoctrine()->getManager();
+            $entityManager->flush();
+        }
 
-        #try
-        $manager->persist($socio);
-        $manager->flush();
-
-        $response = $this->get("jms_serializer")->serialize($socio,"json");
-
-        return new Response($response);
+        return $this->json($socio, Response::HTTP_OK);
     }
 
-    /**
-     * @Route("/socio/{id}", name="socio_show")
-     */
-    public function show($id) {
-        $socio = $this->getDoctrine()->getRepository(Socio::class)->find($id);
+    #[Route('/socio/{id}', name: 'socio_show', methods: ['GET'], requirements: ['id' => '\d+'])]
+    #[Route('/socio/show/{id}', name: 'socio_show_alias', methods: ['GET'], requirements: ['id' => '\d+'])]
+    public function show(int $id, SocioRepository $socioRepository): JsonResponse
+    {
+        $socio = $socioRepository->find($id);
 
+        if (!$socio) {
+            return $this->json(['error' => 'Sócio não encontrado.'], Response::HTTP_NOT_FOUND);
+        }
 
-
-        return $this->render('socios/show.html.twig', array('socio' => $socio));
+        return $this->json($socio, Response::HTTP_OK);
     }
 
-    /**
-     * @Route("/socio/delete/{id}")
-     * @Method({"DELETE"})
-     */
-    public function delete(Request $request, $id) {
-        $socio = $this->getDoctrine()->getRepository(Socio::class)->find($id);
+    #[Route('/socio/delete/{id}', name: 'socio_delete', methods: ['DELETE', 'POST', 'GET'], requirements: ['id' => '\d+'])]
+    #[Route('/socio/{id}', name: 'socio_delete_rest', methods: ['DELETE'], requirements: ['id' => '\d+'])]
+    public function delete(int $id, SocioRepository $socioRepository, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $socio = $socioRepository->find($id);
 
-        $entityManager = $this->getDoctrine()->getManager();
+        if (!$socio) {
+            return $this->json(['error' => 'Sócio não encontrado.'], Response::HTTP_NOT_FOUND);
+        }
+
         $entityManager->remove($socio);
         $entityManager->flush();
 
-        $response = new Response();
-        $response->send();
-
-        $response = $this->get("jms_serializer")->serialize($socio,"json");
-
-        return new Response($response);
+        return $this->json(['message' => 'Sócio removido com sucesso.', 'id' => $id], Response::HTTP_OK);
     }
 }

@@ -1,103 +1,96 @@
 <?php
+
 namespace App\Controller;
 
 use App\Entity\Empresa;
-use Symfony\Component\HttpFoundation\Response;
+use App\Repository\EmpresaRepository;
+use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\Routing\Annotation\Route;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
-use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Attribute\Route;
 
+class EmpresaController extends AbstractController
+{
+    #[Route('/', name: 'empresa_list', methods: ['GET'])]
+    public function index(EmpresaRepository $empresaRepository): JsonResponse
+    {
+        $empresas = $empresaRepository->findAll();
 
-class EmpresaController extends Controller {
-    /**
-     * @Route("/", name="empresa_list")
-     * @Method({"GET"})
-     */
-    public function index() {
-
-        $empresas= $this->getDoctrine()->getRepository(Empresa::class)->findAll();
-
-        $response = $this->get("jms_serializer")->serialize($empresas,"json");
-        return new Response($response);
+        return $this->json($empresas, Response::HTTP_OK);
     }
 
-    /**
-     * @Route("/empresa/new", name="new_empresa")
-     * Method({"POST"})
-     * @param Request $request
-     * @return \Symfony\Component\HttpFoundation\RedirectResponse|Response
-     */
-    public function new(Request $request) {
-        $request = json_decode($request->getContent(),1);
+    #[Route('/empresa/new', name: 'new_empresa', methods: ['GET', 'POST'])]
+    public function new(Request $request, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true);
+
+        if (!$data || !isset($data['nome'])) {
+            return $this->json(['error' => 'Dados inválidos. O campo "nome" é obrigatório.'], Response::HTTP_BAD_REQUEST);
+        }
 
         $empresa = new Empresa();
-        $empresa->setNome($request["nome"]);
-        $empresa->setTelefone($request["telefone"]);
+        $empresa->setNome($data['nome']);
+        $empresa->setTelefone($data['telefone'] ?? null);
 
-        $manager = $this->getDoctrine()->getManager();
+        $entityManager->persist($empresa);
+        $entityManager->flush();
 
-        #try
-        $manager->persist($empresa);
-        $manager->flush();
-
-        $response = $this->get("jms_serializer")->serialize($empresa,"json");
-        return new Response($response);
+        return $this->json($empresa, Response::HTTP_CREATED);
     }
 
-    /**
-     * @Route("/empresa/edit/{id}", name="edit_empresa")
-     * Method({"GET", "POST"})
-     * @param Request $request
-     * @param $id
-     * @return \Symfony\Component\HttpFoundation\RedirectResponse|Response
-     */
-    public function edit(Request $request, $id) {
-        $empresa = new Empresa();
-        $empresa = $this->getDoctrine()->getRepository(Empresa::class)->find($id);
+    #[Route('/empresa/edit/{id}', name: 'edit_empresa', methods: ['GET', 'POST', 'PUT'])]
+    public function edit(int $id, Request $request, EmpresaRepository $empresaRepository, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $empresa = $empresaRepository->find($id);
 
-        $empresa->setNome($request["nome"]);
-        $empresa->setTelefone($request["telefone"]);
+        if (!$empresa) {
+            return $this->json(['error' => 'Empresa não encontrada.'], Response::HTTP_NOT_FOUND);
+        }
 
-        $manager = $this->getDoctrine()->getManager();
+        $data = json_decode($request->getContent(), true);
 
-        #try
-        $manager->persist($empresa);
-        $manager->flush();
+        if ($data) {
+            if (isset($data['nome'])) {
+                $empresa->setNome($data['nome']);
+            }
+            if (isset($data['telefone'])) {
+                $empresa->setTelefone($data['telefone']);
+            }
 
-        $response = $this->get("jms_serializer")->serialize($empresa,"json");
+            $entityManager->flush();
+        }
 
-        return new Response($response);
+        return $this->json($empresa, Response::HTTP_OK);
     }
 
-    /**
-     * @Route("/empresa/{id}", name="empresa_show")
-     */
-    public function show($id) {
+    #[Route('/empresa/{id}', name: 'empresa_show', methods: ['GET'], requirements: ['id' => '\d+'])]
+    #[Route('/empresa/show/{id}', name: 'empresa_show_alias', methods: ['GET'], requirements: ['id' => '\d+'])]
+    public function show(int $id, EmpresaRepository $empresaRepository): JsonResponse
+    {
+        $empresa = $empresaRepository->find($id);
 
-        $empresa = $this->getDoctrine()->getRepository(Empresa::class)->find($id);
+        if (!$empresa) {
+            return $this->json(['error' => 'Empresa não encontrada.'], Response::HTTP_NOT_FOUND);
+        }
 
-        $response = $this->get("jms_serializer")->serialize($empresa,"json");
-
-        return new Response($response);
+        return $this->json($empresa, Response::HTTP_OK);
     }
 
-    /**
-     * @Route("/empresa/delete/{id}")
-     * @Method({"DELETE"})
-     */
-    public function delete(Request $request, $id) {
-        $empresa = $this->getDoctrine()->getRepository(Empresa::class)->find($id);
+    #[Route('/empresa/delete/{id}', name: 'empresa_delete', methods: ['DELETE', 'POST', 'GET'], requirements: ['id' => '\d+'])]
+    #[Route('/empresa/{id}', name: 'empresa_delete_rest', methods: ['DELETE'], requirements: ['id' => '\d+'])]
+    public function delete(int $id, EmpresaRepository $empresaRepository, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $empresa = $empresaRepository->find($id);
 
-        $entityManager = $this->getDoctrine()->getManager();
+        if (!$empresa) {
+            return $this->json(['error' => 'Empresa não encontrada.'], Response::HTTP_NOT_FOUND);
+        }
+
         $entityManager->remove($empresa);
         $entityManager->flush();
 
-        $response = new Response();
-        $response->send();
-
-        $response = $this->get("jms_serializer")->serialize($empresa,"json");
-
-        return new Response($response);
+        return $this->json(['message' => 'Empresa removida com sucesso.', 'id' => $id], Response::HTTP_OK);
     }
 }

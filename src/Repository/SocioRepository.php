@@ -4,9 +4,11 @@ namespace App\Repository;
 
 use App\Entity\Socio;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
-use Symfony\Bridge\Doctrine\RegistryInterface;
+use Doctrine\Persistence\ManagerRegistry;
 
 /**
+ * @extends ServiceEntityRepository<Socio>
+ *
  * @method Socio|null find($id, $lockMode = null, $lockVersion = null)
  * @method Socio|null findOneBy(array $criteria, array $orderBy = null)
  * @method Socio[]    findAll()
@@ -14,37 +16,26 @@ use Symfony\Bridge\Doctrine\RegistryInterface;
  */
 class SocioRepository extends ServiceEntityRepository
 {
-    public function __construct(RegistryInterface $registry)
+    public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, Socio::class);
     }
 
-//    /**
-//     * @return Socio[] Returns an array of Socio objects
-//     */
-    /*
-    public function findByExampleField($value)
+    public function save(Socio $entity, bool $flush = false): void
     {
-        return $this->createQueryBuilder('s')
-            ->andWhere('s.exampleField = :val')
-            ->setParameter('val', $value)
-            ->orderBy('s.id', 'ASC')
-            ->setMaxResults(10)
-            ->getQuery()
-            ->getResult()
-        ;
-    }
-    */
+        $this->getEntityManager()->persist($entity);
 
-    /*
-    public function findOneBySomeField($value): ?Socio
-    {
-        return $this->createQueryBuilder('s')
-            ->andWhere('s.exampleField = :val')
-            ->setParameter('val', $value)
-            ->getQuery()
-            ->getOneOrNullResult()
-        ;
+        if ($flush) {
+            $this->getEntityManager()->flush();
+        }
     }
-    */
+
+    public function remove(Socio $entity, bool $flush = false): void
+    {
+        $this->getEntityManager()->remove($entity);
+
+        if ($flush) {
+            $this->getEntityManager()->flush();
+        }
+    }
 }

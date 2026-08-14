@@ -4,9 +4,11 @@ namespace App\Repository;
 
 use App\Entity\Empresa;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
-use Symfony\Bridge\Doctrine\RegistryInterface;
+use Doctrine\Persistence\ManagerRegistry;
 
 /**
+ * @extends ServiceEntityRepository<Empresa>
+ *
  * @method Empresa|null find($id, $lockMode = null, $lockVersion = null)
  * @method Empresa|null findOneBy(array $criteria, array $orderBy = null)
  * @method Empresa[]    findAll()
@@ -14,37 +16,26 @@ use Symfony\Bridge\Doctrine\RegistryInterface;
  */
 class EmpresaRepository extends ServiceEntityRepository
 {
-    public function __construct(RegistryInterface $registry)
+    public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, Empresa::class);
     }
 
-//    /**
-//     * @return Empresa[] Returns an array of Empresa objects
-//     */
-    /*
-    public function findByExampleField($value)
+    public function save(Empresa $entity, bool $flush = false): void
     {
-        return $this->createQueryBuilder('e')
-            ->andWhere('e.exampleField = :val')
-            ->setParameter('val', $value)
-            ->orderBy('e.id', 'ASC')
-            ->setMaxResults(10)
-            ->getQuery()
-            ->getResult()
-        ;
-    }
-    */
+        $this->getEntityManager()->persist($entity);
 
-    /*
-    public function findOneBySomeField($value): ?Empresa
-    {
-        return $this->createQueryBuilder('e')
-            ->andWhere('e.exampleField = :val')
-            ->setParameter('val', $value)
-            ->getQuery()
-            ->getOneOrNullResult()
-        ;
+        if ($flush) {
+            $this->getEntityManager()->flush();
+        }
     }
-    */
+
+    public function remove(Empresa $entity, bool $flush = false): void
+    {
+        $this->getEntityManager()->remove($entity);
+
+        if ($flush) {
+            $this->getEntityManager()->flush();
+        }
+    }
 }
